@@ -1,2 +1,3 @@
 # budpay-magento
-The Offical Magento integration for Budpay Merchants
+
+The Offical Magento integration for Budpay Merchants.
