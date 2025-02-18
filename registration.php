@@ -4,4 +4,4 @@ declare(strict_types=1);
 
 use Magento\Framework\Component\ComponentRegistrar;
 
-ComponentRegistrar::register(ComponentRegistrar::MODULE,'Budpay_Payments',__DIR__);
+ComponentRegistrar::register(ComponentRegistrar::MODULE,'Budpay_Payment',__DIR__);
