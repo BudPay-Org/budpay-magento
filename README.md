@@ -13,7 +13,7 @@ A magento module that allows you to accept payment on Magento 2x
  - Credit card
  - Bank Transfer
 
-#installation
+## Installation
 
 ### Manual Installation
 
