@@ -1,32 +1,43 @@
 <?php
 namespace Budpay\Payment\Controller\Redirect;
 
-use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\RedirectFactory;
+use Magento\Framework\Message\ManagerInterface;
 use Budpay\Payment\Model\Payment;
+use Psr\Log\LoggerInterface;
 
-class Index extends \Magento\Framework\App\Action\Action
+class Index implements HttpGetActionInterface
 {
-    protected $payment;
-    protected $resultRedirectFactory;
+    private $resultRedirectFactory;
+    private $payment;
+    private $messageManager;
+    private $logger;
 
     public function __construct(
-        Context $context,
+        RedirectFactory $resultRedirectFactory,
         Payment $payment,
-        RedirectFactory $resultRedirectFactory
+        ManagerInterface $messageManager,
+        LoggerInterface $logger
     ) {
-        parent::__construct($context);
-        $this->payment = $payment;
         $this->resultRedirectFactory = $resultRedirectFactory;
+        $this->payment = $payment;
+        $this->messageManager = $messageManager;
+        $this->logger = $logger;
     }
 
     public function execute()
     {
-        $checkoutUrl = $this->payment->startTransaction();
-        if ($checkoutUrl) {
-            return $this->resultRedirectFactory->create()->setUrl($checkoutUrl);
+        try {
+            $checkoutUrl = $this->payment->startTransaction();
+            if ($checkoutUrl) {
+                return $this->resultRedirectFactory->create()->setUrl($checkoutUrl);
+            }
+        } catch (\Exception $e) {
+            $this->logger->debug('Budpay Redirect Error: ' . $e->getMessage());
         }
+
         $this->messageManager->addErrorMessage(__('Unable to initiate Budpay checkout.'));
-        return $this->_redirect('checkout/cart');
+        return $this->resultRedirectFactory->create()->setPath('checkout/cart');
     }
 }

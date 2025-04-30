@@ -11,7 +11,7 @@ use Magento\Store\Model\ScopeInterface;
 
 class Payment extends AbstractMethod
 {
-    protected $_code = 'budpay_payment';
+    protected $_code = 'budpay';
     protected $_isOffline = false;
     protected $checkoutSession;
     protected $order;
@@ -39,30 +39,52 @@ class Payment extends AbstractMethod
         $amount = $order->getGrandTotal();
         $currency = $order->getOrderCurrencyCode();
         $orderId = $order->getIncrementId();
-        $email = "olaobajua@gmail.com";
-        
-        $apiKey = $this->scopeConfig->getValue('payment/budpay_payment/api_key', ScopeInterface::SCOPE_STORE);
-        $callbackUrl = $this->urlBuilder->getUrl('budpay/payment/callback');
-        
+        $email = $order->getCustomerEmail();
+
+        $apiKey = $this->scopeConfig->getValue('payment/budpay/api_key', ScopeInterface::SCOPE_STORE);
+        $callbackUrl = $this->urlBuilder->getUrl('budpay/payment/callback')."?client_reference=". $orderId;
+
         $requestData = [
             'amount' => $amount,
             'email' => $email,
             'currency' => $currency,
-            'reference' => $orderId,
+            'reference' => "MAG_".$order->getIncrementId()."_". uniqid('old'),
             'callback' => $callbackUrl
         ];
-        
+
         $this->curl->setHeaders([
             'Authorization' => 'Bearer ' . $apiKey,
             'Content-Type' => 'application/json'
         ]);
-        
+
         $this->curl->post('https://api.budpay.com/api/v2/transaction/initialize', json_encode($requestData));
         $response = json_decode($this->curl->getBody(), true);
-        
+
         if (isset($response['data']['authorization_url'])) {
             return $response['data']['authorization_url'];
         }
         return false;
+    }
+
+    public function verifyTransaction(string $reference) {
+        $apiKey = $this->scopeConfig->getValue('payment/budpay/api_key', ScopeInterface::SCOPE_STORE);
+
+        $this->curl->setHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+            'Content-Type' => 'application/json'
+        ]);
+
+        $this->curl->get('https://api.budpay.com/api/v2/transaction/verify/:' . $reference);
+        $response = json_decode($this->curl->getBody(), true);
+
+        if( isset( $response[ 'data' ] ) ) {
+            return [
+                'amount' => $response['data']['amount'],
+                'currency' => $response['data']['currency'],
+                'status' => $response['data']['status'],
+            ];
+        }
+
+        return [];
     }
 }

@@ -1,0 +1,3 @@
+<referenceBlock name="order_info">
+    <block class="Budpay\Payment\Block\Info\Budpay" name="info.budpay" template="Budpay_Payment::info/budpay.phtml"/>
+</referenceBlock>
